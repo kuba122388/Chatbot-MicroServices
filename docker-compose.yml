@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  api-gateway:
+    build: ./api
+    ports:
+      - "8000:8000"
+    depends_on:
+      - chatbot
+      - mongodb
+      - queue
+
+  chatbot:
+    build: ./chatbot
+    depends_on:
+      - queue
+
+  mongodb:
+    image: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  queue:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api-gateway
+
+volumes:
+  mongo_data:
