@@ -1,19 +1,30 @@
-version: '3.8'
-
 services:
-  api-gateway:
+  api:
     build: ./api
     ports:
       - "8000:8000"
     depends_on:
-      - chatbot
+#      - chatbot
       - mongodb
-      - queue
+#      - queue
+#
+#  chatbot:
+#    build: ./chatbot
+#    depends_on:
+#      - queue
+#
+#  queue:
+#    image: rabbitmq:3-management
+#    ports:
+#      - "5672:5672"
+#      - "15672:15672"
 
-  chatbot:
-    build: ./chatbot
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
     depends_on:
-      - queue
+      - api
 
   mongodb:
     image: mongo
@@ -22,18 +33,16 @@ services:
     volumes:
       - mongo_data:/data/db
 
-  queue:
-    image: rabbitmq:3-management
+  mongo-express:
+    image: mongo-express
+    restart: always
     ports:
-      - "5672:5672"
-      - "15672:15672"
-
-  frontend:
-    build: ./frontend
-    ports:
-      - "3000:3000"
+      - "8081:8081"
     depends_on:
-      - api-gateway
+      - mongodb
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongodb
+      ME_CONFIG_MONGODB_PORT: 27017
 
 volumes:
   mongo_data:
