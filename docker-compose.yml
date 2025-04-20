@@ -5,14 +5,16 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-#      - chatbot
       - mongo
       - queue
 
-#  chatbot:
-#    build: ./chatbot
-#    depends_on:
-#      - queue
+  chatbot:
+    build: ./chatbot
+    container_name: chatbot
+    depends_on:
+      - api
+      - mongo
+      - queue
 
   queue:
     image: rabbitmq:3-management
@@ -52,7 +54,6 @@ services:
       - "8081:8081"
     depends_on:
       - mongo
-      - api
     environment:
       ME_CONFIG_MONGODB_AUTH_DATABASE: admin
       ME_CONFIG_MONGODB_ADMINUSERNAME: root
