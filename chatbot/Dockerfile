@@ -1,7 +1,7 @@
 FROM python:3.9-slim
 
 # Instalacja zależności
-RUN pip install pika
+RUN pip install pika google-cloud-dialogflow
 
 # Ustawienie katalogu roboczego
 WORKDIR /app
