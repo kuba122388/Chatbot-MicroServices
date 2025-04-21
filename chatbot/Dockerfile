@@ -1,7 +1,7 @@
 FROM python:3.9-slim
 
 # Instalacja zależności
-RUN pip install pika google-generativeai pymongo
+RUN pip install pika google-generativeai pymongo python-dotenv
 
 # Ustawienie katalogu roboczego
 WORKDIR /app

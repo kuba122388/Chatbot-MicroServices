@@ -15,6 +15,8 @@ services:
       - api
       - mongo
       - queue
+    env_file:
+      - .env
 
   queue:
     image: rabbitmq:3-management
