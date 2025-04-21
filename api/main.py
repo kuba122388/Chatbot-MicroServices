@@ -75,3 +75,9 @@ async def post_message(message: Message):
     send_to_queue(message_dict)
 
     return {"status": "ok"}
+
+
+@app.delete("/messages")
+async def delete_all_messages():
+    result = messages_collection.delete_many({})
+    print(f"[✔] Usunięto wszystkie wiadomości")

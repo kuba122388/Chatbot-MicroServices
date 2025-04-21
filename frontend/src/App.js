@@ -12,14 +12,47 @@ const App = () => {
         setMessages(result.data);
     };
 
+    const clearMessages = async () => {
+        const confirmed = window.confirm("Are you sure you want to delete all messages?");
+        if (!confirmed) return;
+
+        try {
+            await axios.delete(`${process.env.REACT_APP_API_URL}/messages`);
+            fetchMessages();
+        } catch (error) {
+            console.error("Failed to delete messages:", error);
+        }
+    };
+
     const sendMessage = async () => {
-        await axios.post('http://localhost:8000/message', {
+        if (!user || !content.trim() || user === `Chatbot`) return;
+
+        await axios.post(`${process.env.REACT_APP_API_URL}/message`, {
             user,
-            content
+            content,
         });
         setContent('');
         fetchMessages();
     };
+
+    const formatText = (text) => {
+        // Najpierw rozdzielamy tekst na fragmenty z pogrubieniem i pochylaniem
+        const formattedText = text.split(/(\*\*[^*]+\*\*|_[^_]+_)/g).map((part, index) => {
+            if (part.startsWith("**") && part.endsWith("**")) {
+                // Jeśli część zaczyna się i kończy na '**', renderujemy ją jako pogrubioną
+                return <strong key={index}>{part.slice(2, -2)}</strong>;
+            }
+            if (part.startsWith("_") && part.endsWith("_")) {
+                // Jeśli część zaczyna się i kończy na '_', renderujemy ją jako pochyloną
+                return <em key={index}>{part.slice(1, -1)}</em>;
+            }
+            // Zwykły tekst, bez specjalnego formatowania
+            return part;
+        });
+
+        return formattedText;
+    };
+
 
     useEffect(() => {
         const savedUser = localStorage.getItem('user');
@@ -28,7 +61,6 @@ const App = () => {
         }
 
         fetchMessages();
-
         const interval = setInterval(() => {
             fetchMessages();
         }, 2000);
@@ -37,27 +69,44 @@ const App = () => {
     }, []);
 
     return (
-        <div>
-            <h1>Chatbot</h1>
-            <input
-                type="text"
-                placeholder="Your name"
-                value={user}
-                onChange={(e) => setUser(e.target.value)}
-            />
-            <textarea
-                placeholder="Your message"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-            />
-            <button onClick={sendMessage}>Send</button>
+        <div style={styles.container}>
+            <h1 style={styles.heading}>💬 Chatbot</h1>
 
-            <h2>Messages:</h2>
-            <ul>
+            <div style={styles.inputGroup}>
+                <input
+                    style={styles.input}
+                    type="text"
+                    placeholder="Your name"
+                    value={user}
+                    onChange={(e) => setUser(e.target.value)}
+                />
+                <textarea
+                    style={styles.textarea}
+                    placeholder="Your message"
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            sendMessage();
+                        }
+                    }}
+                />
+                <button style={styles.button} onClick={sendMessage}>Send</button>
+                <div style={styles.clear}>
+                    <button style={styles.button2} onClick={clearMessages}>✗ Clear all messages</button>
+                </div>
+            </div>
+
+            <h2 style={{ marginTop: '30px' }}>Messages:</h2>
+            <ul style={styles.messageList}>
                 {messages.map((msg, index) => (
-                    <li key={index}>
-                        <strong>{msg.user}:</strong> {msg.content}
-                        <div style={{ fontSize: '0.8em', color: '#888' }}>
+                    <li key={index} style={styles.messageItem}>
+                        <strong>{msg.user === 'Chatbot' ? '🤖 ' : ''}{msg.user}:</strong>
+                        <div style={styles.messageContent}>
+                            {formatText(msg.content)}
+                        </div>
+                        <div style={styles.timestamp}>
                             {msg.createdAt
                                 ? `${msg.createdAt.slice(8, 10)}.${msg.createdAt.slice(5, 7)}.${msg.createdAt.slice(0, 4)} ${msg.createdAt.slice(11, 16)}`
                                 : ''}
@@ -67,6 +116,84 @@ const App = () => {
             </ul>
         </div>
     );
+};
+
+const styles = {
+    container: {
+        maxWidth: '600px',
+        margin: '40px auto',
+        padding: '20px',
+        border: '1px solid #ddd',
+        borderRadius: '12px',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+        fontFamily: 'Arial, sans-serif',
+        backgroundColor: '#fafafa',
+    },
+    heading: {
+        textAlign: 'center',
+        color: '#333',
+    },
+    inputGroup: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '10px',
+        marginBottom: '20px',
+    },
+    input: {
+        padding: '10px',
+        borderRadius: '6px',
+        border: '1px solid #ccc',
+        fontSize: '16px',
+    },
+    textarea: {
+        padding: '10px',
+        borderRadius: '6px',
+        border: '1px solid #ccc',
+        fontSize: '16px',
+        resize: 'vertical',
+        minHeight: '80px',
+    },
+    button: {
+        padding: '10px',
+        backgroundColor: '#007BFF',
+        color: '#fff',
+        border: 'none',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontSize: '16px',
+    },
+    button2: {
+        width: '200px',
+        padding: '10px',
+        backgroundColor: '#e9e9e9',
+        color: '#FF0000',
+        border: 'none',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontSize: '16px',
+    },
+    clear: {
+        display: 'flex',
+        justifyContent: 'flex-end',
+    },
+    messageList: {
+        listStyle: 'none',
+        padding: 0,
+    },
+    messageItem: {
+        padding: '10px',
+        borderBottom: '1px solid #eee',
+    },
+    messageContent: {
+        paddingTop: '5px',
+        whiteSpace: 'pre-wrap',  // Zachowanie formatowania \n
+        lineHeight: '1.8',       // Zwiększenie interlinii
+    },
+    timestamp: {
+        fontSize: '0.8em',
+        color: '#999',
+        marginTop: '4px',
+    },
 };
 
 export default App;

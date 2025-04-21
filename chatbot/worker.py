@@ -48,7 +48,6 @@ def on_message(ch, method, properties, body):
         print(f"📩 User message: {user_message}")
         sys.stdout.flush()
 
-        # 🧠 Odpowiedź z Gemini
         response = model.generate_content(user_message)
         bot_response = response.text.strip()
 
@@ -56,7 +55,7 @@ def on_message(ch, method, properties, body):
         sys.stdout.flush()
 
         bot_message = {
-            "user": "bot",
+            "user": "Chatbot",
             "content": bot_response,
             "createdAt": datetime.now().isoformat()
         }
