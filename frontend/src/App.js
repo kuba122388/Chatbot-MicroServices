@@ -25,7 +25,7 @@ const App = () => {
     };
 
     const sendMessage = async () => {
-        if (!user || !content.trim() || user == `Chatbot`) return;
+        if (!user || !content.trim() || user === `Chatbot`) return;
 
         await axios.post(`${process.env.REACT_APP_API_URL}/message`, {
             user,
@@ -34,6 +34,25 @@ const App = () => {
         setContent('');
         fetchMessages();
     };
+
+    const formatText = (text) => {
+        // Najpierw rozdzielamy tekst na fragmenty z pogrubieniem i pochylaniem
+        const formattedText = text.split(/(\*\*[^*]+\*\*|_[^_]+_)/g).map((part, index) => {
+            if (part.startsWith("**") && part.endsWith("**")) {
+                // Jeśli część zaczyna się i kończy na '**', renderujemy ją jako pogrubioną
+                return <strong key={index}>{part.slice(2, -2)}</strong>;
+            }
+            if (part.startsWith("_") && part.endsWith("_")) {
+                // Jeśli część zaczyna się i kończy na '_', renderujemy ją jako pochyloną
+                return <em key={index}>{part.slice(1, -1)}</em>;
+            }
+            // Zwykły tekst, bez specjalnego formatowania
+            return part;
+        });
+
+        return formattedText;
+    };
+
 
     useEffect(() => {
         const savedUser = localStorage.getItem('user');
@@ -66,6 +85,12 @@ const App = () => {
                     placeholder="Your message"
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            sendMessage();
+                        }
+                    }}
                 />
                 <button style={styles.button} onClick={sendMessage}>Send</button>
                 <div style={styles.clear}>
@@ -77,7 +102,10 @@ const App = () => {
             <ul style={styles.messageList}>
                 {messages.map((msg, index) => (
                     <li key={index} style={styles.messageItem}>
-                        <strong>{msg.user === 'Chatbot' ? '🤖 ' : ''} {msg.user}:</strong> {msg.content}
+                        <strong>{msg.user === 'Chatbot' ? '🤖 ' : ''}{msg.user}:</strong>
+                        <div style={styles.messageContent}>
+                            {formatText(msg.content)}
+                        </div>
                         <div style={styles.timestamp}>
                             {msg.createdAt
                                 ? `${msg.createdAt.slice(8, 10)}.${msg.createdAt.slice(5, 7)}.${msg.createdAt.slice(0, 4)} ${msg.createdAt.slice(11, 16)}`
@@ -155,6 +183,11 @@ const styles = {
     messageItem: {
         padding: '10px',
         borderBottom: '1px solid #eee',
+    },
+    messageContent: {
+        paddingTop: '5px',
+        whiteSpace: 'pre-wrap',  // Zachowanie formatowania \n
+        lineHeight: '1.8',       // Zwiększenie interlinii
     },
     timestamp: {
         fontSize: '0.8em',
