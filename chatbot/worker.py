@@ -5,85 +5,78 @@ import time
 import sys
 from datetime import datetime
 from pymongo import MongoClient
-from google.cloud import dialogflow_v2 as dialogflow
-from google.oauth2 import service_account
+import google.generativeai as genai
 
-# Autoryzacja
-credentials_path = "dialogflow-creds.json"
-credentials = service_account.Credentials.from_service_account_file(credentials_path)
-project_id = "chatbot-agent-wu9l"
+GOOGLE_API_KEY = os.getenv("GEMINI_API_KEY", "Your API Key :)")
+genai.configure(api_key=GOOGLE_API_KEY)
 
-# MongoDB
+# Połączenie z MongoDB
 client = MongoClient("mongodb://root:example@mongo:27017")
 db = client["mydatabase"]
 messages_collection = db.messages
 
-# Funkcja obsługi Dialogflow
-def detect_intent_texts(session_id, text, language_code="pl"):
-    session_client = dialogflow.SessionsClient(credentials=credentials)
-    session = session_client.session_path(project_id, session_id)
-
-    text_input = dialogflow.TextInput(text=text, language_code=language_code)
-    query_input = dialogflow.QueryInput(text=text_input)
-
-    response = session_client.detect_intent(request={"session": session, "query_input": query_input})
-    return response.query_result
+# Gemini model
+model = genai.GenerativeModel(model_name="models/gemini-2.0-flash-lite")
 
 # RabbitMQ
 def connect_to_rabbitmq():
     while True:
         try:
-            print("Trying to connect to RabbitMQ...")
+            print("🔄 Connecting to RabbitMQ...")
             sys.stdout.flush()
+
             connection = pika.BlockingConnection(pika.ConnectionParameters(host='queue'))
             channel = connection.channel()
             channel.queue_declare(queue='chatbot_queue')
-            print("Successfully connected to RabbitMQ.")
+
+            print("✅ Connected to RabbitMQ.")
             sys.stdout.flush()
+
             return channel
-        except pika.exceptions.AMQPConnectionError as e:
-            print(f"Error connecting to RabbitMQ: {e}")
+        except Exception as e:
+            print(f"❌ RabbitMQ error: {e}")
             print("Retrying in 10 seconds...")
             sys.stdout.flush()
             time.sleep(10)
 
-# Obsługa wiadomości
+# Obsługa wiadomości z kolejki
 def on_message(ch, method, properties, body):
     try:
         message = json.loads(body)
-        print(f"Received message: {message}")
-        sys.stdout.flush()
-
         user_message = message.get('content', '[no content]')
-        session_id = "session"  # Można rozszerzyć na dynamiczne sesje
-        result = detect_intent_texts(session_id, user_message)
 
-        intent_name = result.intent.display_name
-        bot_response = result.fulfillment_text
-
-        print(f"Detected intent: {intent_name}")
-        print(f"Bot response: {bot_response}")
+        print(f"📩 User message: {user_message}")
         sys.stdout.flush()
 
-        # Zapis do MongoDB jako wiadomość od bota
+        # 🧠 Odpowiedź z Gemini
+        response = model.generate_content(user_message)
+        bot_response = response.text.strip()
+
+        print(f"🤖 Gemini: {bot_response}")
+        sys.stdout.flush()
+
         bot_message = {
-            "user": "ChatBot",
+            "user": "bot",
             "content": bot_response,
             "createdAt": datetime.now().isoformat()
         }
+
         messages_collection.insert_one(bot_message)
 
     except Exception as e:
-        print(f"Failed to process message: {e}")
+        print(f"⚠️ Error while processing message: {e}")
         sys.stdout.flush()
     finally:
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
-# Worker
 def start_worker():
+    print("📋 Dostępne modele:")
+    for m in genai.list_models():
+        print(f"- {m.name} ({'✅' if 'generateContent' in m.supported_generation_methods else '❌'})")
+
     channel = connect_to_rabbitmq()
     channel.basic_consume(queue='chatbot_queue', on_message_callback=on_message)
-    print("Waiting for messages. To exit press CTRL+C")
+    print("🟢 Waiting for messages...")
     sys.stdout.flush()
     channel.start_consuming()
 

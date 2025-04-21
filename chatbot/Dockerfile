@@ -1,7 +1,7 @@
 FROM python:3.9-slim
 
 # Instalacja zależności
-RUN pip install pika google-cloud-dialogflow pymongo
+RUN pip install pika google-generativeai pymongo
 
 # Ustawienie katalogu roboczego
 WORKDIR /app
