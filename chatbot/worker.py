@@ -7,7 +7,7 @@ from datetime import datetime
 from pymongo import MongoClient
 import google.generativeai as genai
 
-GOOGLE_API_KEY = os.getenv("GEMINI_API_KEY", "Your API Key :)")
+GOOGLE_API_KEY = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=GOOGLE_API_KEY)
 
 # Połączenie z MongoDB
