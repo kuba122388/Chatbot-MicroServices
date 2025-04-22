@@ -8,10 +8,14 @@ from pymongo import MongoClient
 import google.generativeai as genai
 
 GOOGLE_API_KEY = os.getenv("GEMINI_API_KEY")
+MONGO_URL = os.getenv("MONGO_URI")
+QUEUE = os.getenv("RABBITMQ_HOST")
+QUEUE_NAME = os.getenv("CHATBOT_QUEUE")
+
 genai.configure(api_key=GOOGLE_API_KEY)
 
 # Połączenie z MongoDB
-client = MongoClient("mongodb://root:example@mongo:27017")
+client = MongoClient(MONGO_URL)
 db = client["mydatabase"]
 messages_collection = db.messages
 
@@ -25,9 +29,9 @@ def connect_to_rabbitmq():
             print("🔄 Connecting to RabbitMQ...")
             sys.stdout.flush()
 
-            connection = pika.BlockingConnection(pika.ConnectionParameters(host='queue'))
+            connection = pika.BlockingConnection(pika.ConnectionParameters(host=QUEUE))
             channel = connection.channel()
-            channel.queue_declare(queue='chatbot_queue')
+            channel.queue_declare(queue=QUEUE_NAME)
 
             print("✅ Connected to RabbitMQ.")
             sys.stdout.flush()
@@ -69,12 +73,8 @@ def on_message(ch, method, properties, body):
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
 def start_worker():
-    print("📋 Dostępne modele:")
-    for m in genai.list_models():
-        print(f"- {m.name} ({'✅' if 'generateContent' in m.supported_generation_methods else '❌'})")
-
     channel = connect_to_rabbitmq()
-    channel.basic_consume(queue='chatbot_queue', on_message_callback=on_message)
+    channel.basic_consume(queue=QUEUE_NAME, on_message_callback=on_message)
     print("🟢 Waiting for messages...")
     sys.stdout.flush()
     channel.start_consuming()

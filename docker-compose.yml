@@ -7,6 +7,8 @@ services:
     depends_on:
       - mongo
       - queue
+    env_file:
+      - .env
 
   chatbot:
     build: ./chatbot

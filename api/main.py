@@ -6,8 +6,13 @@ from pymongo import MongoClient
 from datetime import datetime
 import pika
 import json
+import os
 
-client = MongoClient("mongodb://root:example@mongo:27017")
+MONGO_URL = os.getenv("MONGO_URI")
+QUEUE = os.getenv("RABBITMQ_HOST")
+QUEUE_NAME = os.getenv("CHATBOT_QUEUE")
+
+client = MongoClient(MONGO_URL)
 db = client["mydatabase"]
 print(client.list_database_names())
 dblist = client.list_database_names()
@@ -37,16 +42,16 @@ class MessageOut(Message):
 
 def send_to_queue(message: dict):
     connection = pika.BlockingConnection(
-        pika.ConnectionParameters(host='queue')
+        pika.ConnectionParameters(host=QUEUE)
     )
     channel = connection.channel()
 
-    channel.queue_declare(queue='chatbot_queue')
+    channel.queue_declare(queue=QUEUE_NAME)
 
     body = json.dumps(message)
 
     channel.basic_publish(exchange='',
-                          routing_key='chatbot_queue',
+                          routing_key=QUEUE_NAME,
                           body=body)
 
     print(f"[x] Wysłano do kolejki: {body}")
