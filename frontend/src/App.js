@@ -36,17 +36,13 @@ const App = () => {
     };
 
     const formatText = (text) => {
-        // Najpierw rozdzielamy tekst na fragmenty z pogrubieniem i pochylaniem
         const formattedText = text.split(/(\*\*[^*]+\*\*|_[^_]+_)/g).map((part, index) => {
             if (part.startsWith("**") && part.endsWith("**")) {
-                // Jeśli część zaczyna się i kończy na '**', renderujemy ją jako pogrubioną
                 return <strong key={index}>{part.slice(2, -2)}</strong>;
             }
             if (part.startsWith("_") && part.endsWith("_")) {
-                // Jeśli część zaczyna się i kończy na '_', renderujemy ją jako pochyloną
                 return <em key={index}>{part.slice(1, -1)}</em>;
             }
-            // Zwykły tekst, bez specjalnego formatowania
             return part;
         });
 
@@ -186,8 +182,8 @@ const styles = {
     },
     messageContent: {
         paddingTop: '5px',
-        whiteSpace: 'pre-wrap',  // Zachowanie formatowania \n
-        lineHeight: '1.8',       // Zwiększenie interlinii
+        whiteSpace: 'pre-wrap',
+        lineHeight: '1.8',
     },
     timestamp: {
         fontSize: '0.8em',

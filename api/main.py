@@ -54,7 +54,7 @@ def send_to_queue(message: dict):
                           routing_key=QUEUE_NAME,
                           body=body)
 
-    print(f"[x] Wysłano do kolejki: {body}")
+    print(f"[x] Message send to queue: {body}")
     connection.close()
 
 @app.get("/messages", response_model=List[MessageOut])
@@ -85,4 +85,4 @@ async def post_message(message: Message):
 @app.delete("/messages")
 async def delete_all_messages():
     result = messages_collection.delete_many({})
-    print(f"[✔] Usunięto wszystkie wiadomości")
+    print(f"[✔] All messages deleted successfully!")

@@ -14,7 +14,7 @@ QUEUE_NAME = os.getenv("CHATBOT_QUEUE")
 
 genai.configure(api_key=GOOGLE_API_KEY)
 
-# Połączenie z MongoDB
+# Connection with MongoDB
 client = MongoClient(MONGO_URL)
 db = client["mydatabase"]
 messages_collection = db.messages
@@ -43,7 +43,7 @@ def connect_to_rabbitmq():
             sys.stdout.flush()
             time.sleep(10)
 
-# Obsługa wiadomości z kolejki
+# Queue handler
 def on_message(ch, method, properties, body):
     try:
         message = json.loads(body)

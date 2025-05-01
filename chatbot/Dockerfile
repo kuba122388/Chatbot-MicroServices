@@ -1,13 +1,13 @@
 FROM python:3.9-slim
 
-# Instalacja zależności
+# Dependency installation
 RUN pip install pika google-generativeai pymongo python-dotenv
 
-# Ustawienie katalogu roboczego
+# Setting work directory
 WORKDIR /app
 
-# Kopiowanie plików aplikacji do kontenera
+# App files copy to container
 COPY . .
 
-# Uruchomienie aplikacji
+# Run the application
 CMD [ "python", "worker.py" ]
